@@ -1,7 +1,7 @@
 /* GreenKit English：共用程式（讀題庫 .md、隨機出題、作答、朗讀、音效）。
    題庫在 banks/unit-N.md，寫法見 banks/README.md。首頁 index.html 和練習頁 practice.html 都載入這個檔。 */
 const GK = (() => {
-  const VER = '1.2.1', DATE = '2026-10-18';
+  const VER = '1.2.2', DATE = '2026-10-18';
   const PER_ROUND = 15;
   const UNITS = [1, 2, 3];
   const CREW = ['yellow', 'red', 'blue', 'purple', 'white', 'rock', 'wing', 'ice'];
