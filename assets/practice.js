@@ -3,7 +3,7 @@
    畫面：上方是 15 顆踏腳石的小路（角色一題走一步，答對種花）；每題由一位角色出題，題目是它的對話框；
    答對噴花瓣、花飛進右上角的花朵數；連續答對有全員歡呼；成績是一座花園。 */
 (() => {
-  const { $, esc, shuffle, pick, sfx, sayEn, stopSay, ICON, pikImg, hop, CREW, PETAL, flowerSVG, sproutSVG, LISTEN, PER_ROUND } = GK;
+  const { $, esc, shuffle, pick, sayEn, stopSay, ICON, pikImg, hop, CREW, PETAL, flowerSVG, sproutSVG, LISTEN, PER_ROUND } = GK;
   const P = new URLSearchParams(location.search);
   const U = GK.UNITS.includes(+P.get('u')) ? +P.get('u') : 1;
   const LISTEN_MODE = P.get('m') === 'l';
@@ -16,7 +16,7 @@
 
   /* ---------- 頂列：聲音、花朵數、小路 ---------- */
   const sndBtn = $('#soundBtn');
-  function renderSound() { sndBtn.innerHTML = (GK.soundOn ? ICON.spk : ICON.mute) + `<span>聲音 ${GK.soundOn ? '開' : '關'}</span>`; sndBtn.setAttribute('aria-pressed', GK.soundOn); }
+  function renderSound() { sndBtn.innerHTML = (GK.soundOn ? ICON.spk : ICON.mute) + `<span>朗讀 ${GK.soundOn ? '開' : '關'}</span>`; sndBtn.setAttribute('aria-pressed', GK.soundOn); }
   sndBtn.onclick = () => { GK.setSound(!GK.soundOn); renderSound(); };
   renderSound();
   $('#homeBtn').innerHTML = ICON.home + '<span>回首頁</span>';
@@ -51,7 +51,7 @@
       <p class="sub">走完 ${Math.min(PER_ROUND, total)} 顆石頭，第一次就答對會種出一朵花！<br>${esc(u.scope)}・題庫 ${total} 題，每次都不一樣。${LISTEN_MODE ? '<br><b>請把聲音打開，點角色可以再聽一次。</b>' : ''}</p>
       <button class="btn primary big" id="goBtn">${ICON.next}出發！</button>
     </section>`;
-    $('#goBtn').onclick = () => { GK.unlockAudio(); if (LISTEN_MODE && !GK.soundOn) { GK.setSound(true); renderSound(); } newRound(); };
+    $('#goBtn').onclick = () => { if (LISTEN_MODE && !GK.soundOn) { GK.setSound(true); renderSound(); } newRound(); };
   }).catch(() => {
     main.innerHTML = `<section class="card start"><h1>題庫讀不到</h1><p class="sub">請用網址打開這個網站（不要直接點兩下 html 檔），或稍後再試一次。</p><a class="btn" href="index.html">${ICON.home}回首頁</a></section>`;
   });
@@ -144,7 +144,7 @@
     const h = hostEl();
     const ok = sayEn(t, slow, () => h && h.classList.remove('talking'));
     if (ok) { if (h) h.classList.add('talking'); }
-    else fb('red', GK.soundOn ? '這台裝置不能朗讀英文。' : '聲音是關的，先按右上角「聲音」打開。');
+    else fb('red', GK.soundOn ? '這台裝置不能朗讀英文。' : '朗讀是關的，先按右上角「朗讀」打開。');
   }
 
   /* ---------- 選擇、挑正確、是非、聽力 ---------- */
@@ -189,7 +189,7 @@
     box.onclick = e => {
       const b = e.target.closest('.tile'); if (!b || finished || b.disabled) return;
       const p = pool.find(x => x.id === +b.dataset.id); if (placed.includes(p)) return;
-      placed.push(p); sfx.pop(); draw();
+      placed.push(p); draw();
       if (placed.length === target.length) check();
     };
     slots.onclick = e => {
@@ -239,7 +239,7 @@
   function cheer(n) {
     const c = $('#cheer');
     c.innerHTML = `<div class="cheer-box"><div class="crew">${shuffle(CREW).slice(0, 5).map(k => pikImg(k, 'jump')).join('')}</div><b>連續答對 ${n} 題！</b></div>`;
-    c.hidden = false; sfx.win();
+    c.hidden = false;
     clearTimeout(cheer.t); cheer.t = setTimeout(() => { c.hidden = true; }, 1700);
   }
 
@@ -263,7 +263,6 @@
     $('#nextBtn').scrollIntoView({ block: 'nearest', behavior: GK.reduceMotion ? 'auto' : 'smooth' });
   }
   function right(el) {
-    sfx.good();
     const h = hostEl(); if (h) { h.classList.remove('enter'); hop(h); }
     if (tries === 0) {
       score++; streak++;
@@ -279,11 +278,11 @@
     afterAnswer();
   }
   function hint() {
-    sfx.bad(); streak = 0;
+    streak = 0;
     fb('red', `<b>再想一想！</b><span>${ruleText()}</span>${pagePill(it.sec, it.self)}`);
   }
   function reveal(mark) {
-    sfx.bad(); streak = 0; review.push(it); marks[idx] = 'sprout'; mark();
+    streak = 0; review.push(it); marks[idx] = 'sprout'; mark();
     fb('red', `<b>正確答案是：${esc(it.type === '重組' ? it.a.split(' / ').join(' ') : it.a)}</b><span>${ruleText()}</span>${pagePill(it.sec, it.self)}`);
     afterAnswer();
   }
@@ -315,7 +314,6 @@
         <a class="btn" href="index.html">${ICON.home}回首頁</a>
       </div>
     </section>`;
-    sfx.win();
     $('#againBtn').onclick = () => { newRound(); window.scrollTo(0, 0); };
   }
 })();

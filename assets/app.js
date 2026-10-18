@@ -1,7 +1,7 @@
 /* GreenKit English：共用程式（讀題庫 .md、隨機出題、作答、朗讀、音效）。
    題庫在 banks/unit-N.md，寫法見 banks/README.md。首頁 index.html 和練習頁 practice.html 都載入這個檔。 */
 const GK = (() => {
-  const VER = '1.2.0', DATE = '2026-10-18';
+  const VER = '1.2.1', DATE = '2026-10-18';
   const PER_ROUND = 15;
   const UNITS = [1, 2, 3];
   const CREW = ['yellow', 'red', 'blue', 'purple', 'white', 'rock', 'wing', 'ice'];
@@ -58,32 +58,9 @@ const GK = (() => {
   }
 
   /* ---------- 聲音 ---------- */
-  let soundOn = true, actx = null, enVoice = null;
+  let soundOn = true, enVoice = null;   /* 只有英文朗讀，沒有音效 */
   try { soundOn = localStorage.getItem('gk-sound') !== 'off'; } catch (e) {}
   function setSound(on) { soundOn = on; try { localStorage.setItem('gk-sound', on ? 'on' : 'off'); } catch (e) {} if (!on) stopSay(); }
-  function tone(freqs, dur = .12, type = 'sine', vol = .16) {
-    if (!soundOn) return;
-    try {
-      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-      const t0 = actx.currentTime;
-      freqs.forEach((f, i) => {
-        const o = actx.createOscillator(), g = actx.createGain();
-        o.type = type; o.frequency.value = f;
-        g.gain.setValueAtTime(0, t0 + i * dur);
-        g.gain.linearRampToValueAtTime(vol, t0 + i * dur + .02);
-        g.gain.exponentialRampToValueAtTime(.001, t0 + i * dur + dur * 1.6);
-        o.connect(g).connect(actx.destination);
-        o.start(t0 + i * dur); o.stop(t0 + i * dur + dur * 1.8);
-      });
-    } catch (e) {}
-  }
-  const sfx = {
-    good: () => tone([660, 880, 1175], .1, 'triangle'),
-    bad: () => tone([240, 190], .15, 'square', .06),
-    pop: () => tone([560 + Math.random() * 240], .06, 'triangle', .1),
-    win: () => tone([523, 659, 784, 1046, 1318], .1, 'triangle')
-  };
-  function unlockAudio() { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume && actx.resume(); } catch (e) {} }
   /* 系統的「玩具聲音」不拿來念課文 */
   const NOVELTY = /albert|bad news|bahh|bells|boing|bubbles|cellos|deranged|good news|hysterical|jester|organ|superstar|trinoids|whisper|wobble|zarvox|junior|ralph|fred|kathy|pipe|grandma|grandpa|rocko|shelley|eddy|flo|reed|sandy/i;
   function pickEnVoice() {
@@ -129,9 +106,9 @@ const GK = (() => {
   /* 點一下角色會跳起來 */
   document.addEventListener('click', e => {
     const p = e.target.closest && e.target.closest('.hopper .pik'); if (!p) return;
-    hop(p); sfx.pop();
+    hop(p);
   });
   function hop(el) { if (reduceMotion) return; el.classList.remove('hop'); void el.offsetWidth; el.classList.add('hop'); }
 
-  return { VER, DATE, PER_ROUND, UNITS, CREW, PETAL, flowerSVG, sproutSVG, LISTEN, $, esc, shuffle, pick, parse, loadUnit, draw, isListen, sfx, unlockAudio, sayEn, stopSay, setSound, get soundOn() { return soundOn; }, ICON, pikImg, hop, reduceMotion };
+  return { VER, DATE, PER_ROUND, UNITS, CREW, PETAL, flowerSVG, sproutSVG, LISTEN, $, esc, shuffle, pick, parse, loadUnit, draw, isListen, sayEn, stopSay, setSound, get soundOn() { return soundOn; }, ICON, pikImg, hop, reduceMotion };
 })();
