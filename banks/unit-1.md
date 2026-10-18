@@ -149,7 +149,7 @@
 | 選擇 | When monkeys hug you, you know you are ___. | their friend | sad / angry | | 原題 |
 | 選擇 | Whales are ___. | huge and smart animals | small and scary insects / small and lovely insects | | 原題 |
 | 選擇 | Monkeys and whales are both ___. | smart animals | huge animals / scary insects | | 原題 |
-| 選擇 | Which one is NOT a "to V" in the story? | to sing | to talk / to slap | 文章裡的 to V：like to talk with、sing to talk、start to slap。 | 原題 |
+| 選擇 | 文章裡有好幾個「to + 動詞」，下面哪一個在文章裡找不到？ | to sing | to talk / to slap | 文章裡的 to V 有：like to talk、sing to talk、start to slap。sing 前面沒有 to，所以找不到 to sing。 | 原題 |
 | 是非 | When monkeys are happy, they slap the ground. | 錯 | | | 原題 |
 | 是非 | The whale songs sound like WHEEEWHAAA! | 對 | | | 自編 |
 
