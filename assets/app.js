@@ -1,7 +1,7 @@
 /* GreenKit English：共用程式（讀題庫 .md、隨機出題、作答、朗讀、音效）。
    題庫在 banks/unit-N.md，寫法見 banks/README.md。首頁 index.html 和練習頁 practice.html 都載入這個檔。 */
 const GK = (() => {
-  const VER = '1.0.0', DATE = '2026-10-18';
+  const VER = '1.1.0', DATE = '2026-10-18';
   const PER_ROUND = 15;
   const UNITS = [1, 2, 3];
   const CREW = ['yellow', 'red', 'blue', 'purple', 'white', 'rock', 'wing', 'ice'];
@@ -94,7 +94,7 @@ const GK = (() => {
   }
   if ('speechSynthesis' in window) { pickEnVoice(); try { speechSynthesis.addEventListener('voiceschanged', pickEnVoice); } catch (e) {} }
   /* 英文朗讀：單字 0.8、句子 0.9；slow 再慢一點 */
-  function sayEn(text, slow) {
+  function sayEn(text, slow, onend) {
     if (!soundOn || !('speechSynthesis' in window)) return false;
     try {
       speechSynthesis.cancel();
@@ -103,6 +103,7 @@ const GK = (() => {
       const u = new SpeechSynthesisUtterance(t);
       u.lang = 'en-US'; if (enVoice) u.voice = enVoice;
       u.rate = (/\s/.test(t.trim()) ? .9 : .8) * (slow ? .7 : 1);
+      if (onend) { let fired = false; const f = () => { if (!fired) { fired = true; onend(); } }; u.onend = f; u.onerror = f; setTimeout(f, 1500 + t.length * 120); }
       speechSynthesis.speak(u);
       return true;
     } catch (e) { return false; }
@@ -119,6 +120,10 @@ const GK = (() => {
     turtle: '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="11" cy="13" rx="7" ry="5" fill="currentColor"/><circle cx="19.5" cy="12" r="2.2" fill="currentColor"/><path d="M6 17.5l-1 2M16 17.5l1 2M4 13H2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
     star: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z" fill="currentColor"/></svg>'
   };
+  /* 答對的花（第一次就答對）和小芽（改過來才答對） */
+  const PETAL = { yellow: '#FFE066', red: '#FF9A84', blue: '#93C1FF', purple: '#C6A6F0', white: '#FFFFFF', rock: '#FFE08A', wing: '#F9B3CC', ice: '#B9E9FA' };
+  const flowerSVG = (c = '#F9B3CC') => `<svg class="flower" viewBox="-20 -20 40 40" aria-hidden="true">${[0, 72, 144, 216, 288].map(a => `<circle cx="0" cy="-9" r="7.5" fill="${c}" stroke="rgba(0,0,0,.18)" stroke-width="1.2" transform="rotate(${a})"/>`).join('')}<circle r="5.5" fill="#FFC93C" stroke="#D9A21F" stroke-width="1.2"/></svg>`;
+  const sproutSVG = () => '<svg class="flower" viewBox="-20 -20 40 40" aria-hidden="true"><path d="M0,16 V-2" stroke="#3C8C37" stroke-width="3" stroke-linecap="round"/><path d="M0,2 C-4,-8 -14,-8 -16,-4 C-12,2 -4,4 0,2Z" fill="#78C84A" stroke="#3E8E2C" stroke-width="1.2"/><path d="M0,-2 C4,-12 14,-12 16,-8 C12,-2 4,0 0,-2Z" fill="#78C84A" stroke="#3E8E2C" stroke-width="1.2"/></svg>';
   CREW.forEach(k => { new Image().src = `assets/pikmin/${k}.webp`; });   /* 先載入，答題時角色馬上出現 */
   const pikImg = (k, cls = '') => `<img class="pik ${cls}" src="assets/pikmin/${k}.webp" alt="" draggable="false">`;
   /* 點一下角色會跳起來 */
@@ -128,5 +133,5 @@ const GK = (() => {
   });
   function hop(el) { if (reduceMotion) return; el.classList.remove('hop'); void el.offsetWidth; el.classList.add('hop'); }
 
-  return { VER, DATE, PER_ROUND, UNITS, CREW, LISTEN, $, esc, shuffle, pick, parse, loadUnit, draw, isListen, sfx, unlockAudio, sayEn, stopSay, setSound, get soundOn() { return soundOn; }, ICON, pikImg, hop, reduceMotion };
+  return { VER, DATE, PER_ROUND, UNITS, CREW, PETAL, flowerSVG, sproutSVG, LISTEN, $, esc, shuffle, pick, parse, loadUnit, draw, isListen, sfx, unlockAudio, sayEn, stopSay, setSound, get soundOn() { return soundOn; }, ICON, pikImg, hop, reduceMotion };
 })();

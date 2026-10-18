@@ -1,27 +1,40 @@
 /* GreenKit English：練習頁（practice.html?u=單元&m=s 句型練習 / m=l 聽力練習）。
-   每回從題庫隨機抽 15 題；答錯第一次給提示和課本／習作頁碼，第二次直接看答案。 */
+   每回從題庫隨機抽 15 題；答錯第一次給提示和課本／習作頁碼，第二次直接看答案。
+   畫面：上方是 15 顆踏腳石的小路（角色一題走一步，答對種花）；每題由一位角色出題，題目是它的對話框；
+   答對噴花瓣、花飛進右上角的花朵數；連續答對有全員歡呼；成績是一座花園。 */
 (() => {
-  const { $, esc, shuffle, pick, sfx, sayEn, stopSay, ICON, pikImg, hop, CREW, LISTEN, PER_ROUND } = GK;
+  const { $, esc, shuffle, pick, sfx, sayEn, stopSay, ICON, pikImg, hop, CREW, PETAL, flowerSVG, sproutSVG, LISTEN, PER_ROUND } = GK;
   const P = new URLSearchParams(location.search);
   const U = GK.UNITS.includes(+P.get('u')) ? +P.get('u') : 1;
   const LISTEN_MODE = P.get('m') === 'l';
   const MODE_NAME = LISTEN_MODE ? '聽力練習' : '句型練習';
+  const HOSTS = CREW.filter(k => k !== 'red');   /* 紅色角色負責答錯時的提示 */
+  const BADGE = ['#FFD43B', '#3F86E6', '#8A5CC9', '#F9A8CB'];
   const main = $('#main');
-  let unit = null, list = [], idx = 0, score = 0, review = [];
+  let unit = null, list = [], idx = 0, score = 0, review = [], marks = [], streak = 0, hosts = [], walker = 'wing';
   let it = null, tries = 0, finished = false;
 
-  /* ---------- 頂列 ---------- */
+  /* ---------- 頂列：聲音、花朵數、小路 ---------- */
   const sndBtn = $('#soundBtn');
   function renderSound() { sndBtn.innerHTML = (GK.soundOn ? ICON.spk : ICON.mute) + `<span>聲音 ${GK.soundOn ? '開' : '關'}</span>`; sndBtn.setAttribute('aria-pressed', GK.soundOn); }
   sndBtn.onclick = () => { GK.setSound(!GK.soundOn); renderSound(); };
   renderSound();
   $('#homeBtn').innerHTML = ICON.home + '<span>回首頁</span>';
   $('#homeBtn').addEventListener('click', stopSay);
-
-  function setProgress() {
-    const n = list.length || PER_ROUND, done = Math.min(idx, n);
-    $('#progText').textContent = list.length && idx < n ? `第 ${idx + 1} / ${n} 題` : '';
-    $('#progBar').style.width = (done / n * 100) + '%';
+  const bloomEl = $('#bloom');
+  function renderBloom(pop) {
+    bloomEl.innerHTML = flowerSVG('#F9B3CC') + `<b>${score}</b>`;
+    if (pop && !GK.reduceMotion) { bloomEl.classList.remove('pop'); void bloomEl.offsetWidth; bloomEl.classList.add('pop'); }
+  }
+  function renderTrail() {
+    const n = list.length;
+    if (!n) { $('#trail').innerHTML = ''; return; }
+    const pos = Math.min(idx, n - 1);
+    $('#trail').innerHTML = `<div class="path"></div>${list.map((_, i) => {
+      const m = marks[i];
+      return `<span class="stone ${i === idx ? 'cur' : ''} ${m ? 'done' : ''}" style="left:${(i + .5) / n * 100}%">${m ? (m === 'sprout' ? sproutSVG() : flowerSVG(m)) : ''}</span>`;
+    }).join('')}<span class="walker" style="left:${(pos + .5) / n * 100}%">${pikImg(walker)}</span>
+      <span class="trail-text">${idx < n ? `第 ${idx + 1} / ${n} 題` : '完成！'}</span>`;
   }
 
   /* ---------- 開始 ---------- */
@@ -32,11 +45,11 @@
     $('#modeName').textContent = MODE_NAME;
     const total = u.sections.reduce((s, x) => s + x.items.filter(i => GK.isListen(i) === LISTEN_MODE).length, 0);
     main.innerHTML = `<section class="card start">
-      <div class="crew hopper">${shuffle(CREW).slice(0, 3).map(k => pikImg(k)).join('')}</div>
+      <div class="crew hopper big">${shuffle(CREW).map(k => pikImg(k)).join('')}</div>
       <p class="kicker">${esc(u.title)}</p>
       <h1>${MODE_NAME}</h1>
-      <p class="sub">${esc(u.scope)}<br>題庫 ${total} 題，每次隨機出 ${Math.min(PER_ROUND, total)} 題。${LISTEN_MODE ? '<br><b>請把聲音打開，仔細聽！</b>' : ''}</p>
-      <button class="btn primary big" id="goBtn">${ICON.next}開始練習</button>
+      <p class="sub">走完 ${Math.min(PER_ROUND, total)} 顆石頭，第一次就答對會種出一朵花！<br>${esc(u.scope)}・題庫 ${total} 題，每次都不一樣。${LISTEN_MODE ? '<br><b>請把聲音打開，點角色可以再聽一次。</b>' : ''}</p>
+      <button class="btn primary big" id="goBtn">${ICON.next}出發！</button>
     </section>`;
     $('#goBtn').onclick = () => { GK.unlockAudio(); if (LISTEN_MODE && !GK.soundOn) { GK.setSound(true); renderSound(); } newRound(); };
   }).catch(() => {
@@ -44,7 +57,11 @@
   });
 
   function newRound() {
-    list = GK.draw(unit, LISTEN_MODE); idx = 0; score = 0; review = [];
+    list = GK.draw(unit, LISTEN_MODE); idx = 0; score = 0; review = []; marks = []; streak = 0;
+    walker = pick(CREW);
+    hosts = [];
+    while (hosts.length < list.length) hosts.push(...shuffle(HOSTS));
+    renderBloom();
     show();
   }
 
@@ -61,14 +78,15 @@
   }
   const passageHTML = sec => sec.passage.filter(l => l.trim()).map(l => `<p>${esc(l).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</p>`).join('');
   const pagePill = sec => sec.page ? `<span class="page-pill">${ICON.book}翻到 ${esc(sec.page)}</span>` : '';
+  const hostEl = () => main.querySelector('.host .pik');
 
   function show() {
     stopSay();
+    renderTrail();
     if (idx >= list.length) { result(); return; }
     it = list[idx]; tries = 0; finished = false;
     GK.cur = it;   /* 給自動測試用 */
-    setProgress();
-    const sec = it.sec, lis = GK.isListen(it);
+    const sec = it.sec, lis = GK.isListen(it), host = hosts[idx];
     let prompt = '', body = '';
     if (lis) {
       prompt = LISTEN[it.type];
@@ -90,43 +108,55 @@
       body = `<p class="sentence">${esc(it.q)}</p>`;
     }
     const passage = sec.passage.length ? `<details class="passage" open><summary>${ICON.book}看文章</summary><div class="ptext">${passageHTML(sec)}</div></details>` : '';
-    main.innerHTML = `<section class="card q">
-      <div class="qhead"><span class="sec-tag">${esc(sec.name)}</span><span class="qnum">${idx + 1} / ${list.length}</span></div>
-      ${passage}
-      <p class="prompt">${esc(prompt)}</p>
-      ${body}
-      <div class="answers" id="answers"></div>
-      <div class="feedback" id="fb" hidden></div>
-      <div class="nav"><button class="btn primary" id="nextBtn" hidden>${ICON.next}${idx + 1 < list.length ? '下一題' : '看成績'}</button></div>
+    main.innerHTML = `<section class="scene-q" style="--hc:${GK.PETAL[host]}">
+      <div class="host hopper ${lis ? 'speaker' : ''}" ${lis ? 'data-a="play" role="button" aria-label="再聽一次"' : ''}>
+        ${pikImg(host, 'enter')}
+        ${lis ? `<span class="host-hint">${ICON.spk}點我再聽</span>` : ''}
+      </div>
+      <div class="card q">
+        <div class="qhead"><span class="sec-tag">${esc(sec.name)}</span><span class="qnum">${idx + 1} / ${list.length}</span></div>
+        ${passage}
+        <p class="prompt">${esc(prompt)}</p>
+        ${body}
+        <div class="answers" id="answers"></div>
+        <div class="feedback" id="fb" hidden></div>
+        <div class="nav"><button class="btn primary big" id="nextBtn" hidden>${ICON.next}${idx + 1 < list.length ? '下一題' : '看我的花園'}</button></div>
+      </div>
     </section>`;
     $('#nextBtn').onclick = () => { idx++; show(); window.scrollTo({ top: 0, behavior: GK.reduceMotion ? 'auto' : 'smooth' }); };
-    main.querySelector('.q').addEventListener('click', e => {
+    main.querySelector('.scene-q').addEventListener('click', e => {
       const b = e.target.closest('[data-a]'); if (!b) return;
       const a = b.dataset.a;
-      if (a === 'play') sayOrWarn(it.q);
-      else if (a === 'slow') sayOrWarn(it.q, true);
-      else if (a === 'say') sayOrWarn(it.type === '拼字' ? it.a : b.dataset.t);
+      if (a === 'play') speak(it.q);
+      else if (a === 'slow') speak(it.q, true);
+      else if (a === 'say') speak(it.type === '拼字' ? it.a : b.dataset.t);
     });
     if (it.type === '重組' || it.type === '拼字') tiles();
     else options();
-    if (lis) setTimeout(() => sayOrWarn(it.q), 350);
+    if (lis) setTimeout(() => speak(it.q), 650);
   }
-  function sayOrWarn(t, slow) {
-    if (!sayEn(t, slow)) fb('red', GK.soundOn ? '這台裝置不能朗讀英文。' : '聲音是關的，先按右上角「聲音」打開。');
+  /* 念的時候出題角色會一直跳 */
+  function speak(t, slow) {
+    const h = hostEl();
+    const ok = sayEn(t, slow, () => h && h.classList.remove('talking'));
+    if (ok) { if (h) h.classList.add('talking'); }
+    else fb('red', GK.soundOn ? '這台裝置不能朗讀英文。' : '聲音是關的，先按右上角「聲音」打開。');
   }
 
   /* ---------- 選擇、挑正確、是非、聽力 ---------- */
   function options() {
     const box = $('#answers');
-    const opts = it.type === '是非' ? ['對', '錯'] : shuffle([it.a, ...it.others]);
-    box.className = 'answers' + (it.type === '是非' ? ' tf' : opts.some(o => o.length > 22) ? ' stack' : '');
-    box.innerHTML = opts.map(o => `<button class="opt" data-o="${esc(o)}">${it.type === '是非' ? `<span class="tf-mark">${o === '對' ? 'O' : 'X'}</span>` : ''}${esc(o)}</button>`).join('');
+    const tf = it.type === '是非';
+    const opts = tf ? ['對', '錯'] : shuffle([it.a, ...it.others]);
+    box.className = 'answers' + (tf ? ' tf' : opts.some(o => o.length > 22) ? ' stack' : '');
+    box.innerHTML = opts.map((o, i) => `<button class="opt" data-o="${esc(o)}" style="--bc:${tf ? (o === '對' ? '#2f9e44' : '#d6453a') : BADGE[i % 4]}">
+      <span class="badge">${tf ? (o === '對' ? 'O' : 'X') : 'ABCD'[i]}</span><span class="otext">${esc(o)}</span></button>`).join('');
     box.onclick = e => {
       const b = e.target.closest('.opt'); if (!b || finished || b.disabled) return;
-      if (b.dataset.o === it.a) { b.classList.add('right'); right(); }
+      if (b.dataset.o === it.a) { b.classList.add('right'); right(b); }
       else {
         b.classList.add('wrong'); b.disabled = true; shake(b); tries++;
-        if (tries >= (it.type === '是非' || opts.length <= 2 ? 1 : 2)) reveal(() => box.querySelector(`.opt[data-o="${CSS.escape(it.a)}"]`).classList.add('right'));
+        if (tries >= (tf || opts.length <= 2 ? 1 : 2)) reveal(() => box.querySelector(`.opt[data-o="${CSS.escape(it.a)}"]`).classList.add('right'));
         else hint();
       }
     };
@@ -138,18 +168,18 @@
     const target = spell ? it.a.replace(/\s+/g, '').split('') : it.a.split(' / ');
     let pool = target.map((t, i) => ({ t, id: i }));
     if (spell) { const az = 'abcdefghijklmnopqrstuvwxyz'; for (let k = 0; k < 2; k++) pool.push({ t: pick(az), id: 100 + k }); }
-    pool = shuffle(pool);
+    pool = shuffle(pool).map((p, i) => ({ ...p, c: BADGE[i % 4] }));
     let placed = [];
     const slots = $('#slots'), box = $('#answers');
     box.className = 'answers tiles' + (spell ? ' letters' : '');
-    function draw(marks) {
+    function draw(m) {
       if (spell) {
         let k = 0;
-        slots.innerHTML = it.a.split(/\s+/).map(w => `<span class="word">${[...w].map(() => { const p = placed[k], m = marks ? marks[k] : ''; const h = `<button class="slot ${p ? 'full' : ''} ${m || ''}" data-k="${k}">${p ? esc(p.t) : ''}</button>`; k++; return h; }).join('')}</span>`).join('');
+        slots.innerHTML = it.a.split(/\s+/).map(w => `<span class="word">${[...w].map(() => { const p = placed[k], mk = m ? m[k] : ''; const h = `<button class="slot ${p ? 'full' : ''} ${mk || ''}" data-k="${k}" ${p ? `style="--tc:${p.c}"` : ''}>${p ? esc(p.t) : ''}</button>`; k++; return h; }).join('')}</span>`).join('');
       } else {
-        slots.innerHTML = placed.length ? placed.map((p, k) => `<button class="slot full ${marks ? marks[k] : ''}" data-k="${k}">${esc(p.t)}</button>`).join('') : '<span class="slot-hint">點下面的字卡，放到這裡</span>';
+        slots.innerHTML = placed.length ? placed.map((p, k) => `<button class="slot full ${m ? m[k] : ''}" data-k="${k}" style="--tc:${p.c || '#3f9cc8'}">${esc(p.t)}</button>`).join('') : '<span class="slot-hint">點下面的字卡，放到這裡</span>';
       }
-      box.innerHTML = pool.map(p => `<button class="tile" data-id="${p.id}" ${placed.includes(p) ? 'disabled' : ''}>${esc(p.t)}</button>`).join('');
+      box.innerHTML = pool.map(p => `<button class="tile" data-id="${p.id}" style="--tc:${p.c}" ${placed.includes(p) ? 'disabled' : ''}>${esc(p.t)}</button>`).join('');
     }
     draw();
     box.onclick = e => {
@@ -164,26 +194,56 @@
     };
     function check() {
       const ok = placed.map((p, k) => p.t.toLowerCase() === target[k].toLowerCase());
-      if (ok.every(Boolean)) { draw(ok.map(() => 'right')); right(); return; }
+      if (ok.every(Boolean)) { draw(ok.map(() => 'right')); right(slots); return; }
       tries++;
       draw(ok.map(v => v ? 'right' : 'wrong')); shake(slots);
       if (tries >= 2) {
-        reveal(() => { placed = target.map((t, k) => ({ t, id: -1 - k })); draw(target.map(() => 'right')); box.innerHTML = ''; });
+        reveal(() => { placed = target.map((t, k) => ({ t, id: -1 - k, c: '#2f9e44' })); draw(target.map(() => 'right')); box.innerHTML = ''; });
         return;
       }
       hint();
       finished = true;   /* 等一下再讓孩子改 */
-      setTimeout(() => { let keep = ok.indexOf(false); placed = placed.slice(0, keep); finished = false; draw(); }, 1100);
+      setTimeout(() => { placed = placed.slice(0, ok.indexOf(false)); finished = false; draw(); }, 1100);
     }
   }
 
-  /* ---------- 回饋 ---------- */
+  /* ---------- 特效 ---------- */
   function shake(el) { if (GK.reduceMotion) return; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+  function center(el) { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }
+  /* 從答對的地方噴出花瓣 */
+  function burst(el) {
+    if (GK.reduceMotion) return;
+    const [x, y] = center(el), cols = Object.values(PETAL);
+    for (let i = 0; i < 16; i++) {
+      const d = document.createElement('i'); d.className = 'petal';
+      const a = Math.random() * Math.PI * 2, r = 70 + Math.random() * 90;
+      d.style.cssText = `left:${x}px;top:${y}px;background:${pick(cols)};--dx:${Math.cos(a) * r}px;--dy:${Math.sin(a) * r - 40}px;--rot:${Math.random() * 540 - 270}deg`;
+      document.body.appendChild(d); setTimeout(() => d.remove(), 950);
+    }
+  }
+  /* 一朵花從答對的地方飛到右上角的花朵數 */
+  function flyFlower(el, color) {
+    if (GK.reduceMotion) { renderBloom(true); return; }
+    const [x, y] = center(el), [tx, ty] = center(bloomEl);
+    const f = document.createElement('div'); f.className = 'fly'; f.innerHTML = flowerSVG(color);
+    f.style.cssText = `left:${x}px;top:${y}px`;
+    document.body.appendChild(f);
+    requestAnimationFrame(() => requestAnimationFrame(() => { f.style.transform = `translate(${tx - x}px,${ty - y}px) scale(.55) rotate(360deg)`; f.style.opacity = '.9'; }));
+    setTimeout(() => { f.remove(); renderBloom(true); }, 820);
+  }
+  /* 連續答對：全員出來歡呼 */
+  function cheer(n) {
+    const c = $('#cheer');
+    c.innerHTML = `<div class="cheer-box"><div class="crew">${shuffle(CREW).slice(0, 5).map(k => pikImg(k, 'jump')).join('')}</div><b>連續答對 ${n} 題！</b></div>`;
+    c.hidden = false; sfx.win();
+    clearTimeout(cheer.t); cheer.t = setTimeout(() => { c.hidden = true; }, 1700);
+  }
+
+  /* ---------- 回饋 ---------- */
   function fb(who, html) {
     const f = $('#fb'); f.hidden = false;
     f.className = 'feedback ' + (who === 'red' ? 'bad' : 'good');
-    f.innerHTML = `<div class="hopper">${pikImg(who)}</div><div class="bubble">${html}</div>`;
-    hop(f.querySelector('.pik'));
+    f.innerHTML = `<div class="hopper">${pikImg(who, 'enter')}</div><div class="bubble">${html}</div>`;
   }
   const ruleText = () => esc(it.hint || it.sec.hint);
   function afterAnswer() {
@@ -194,37 +254,51 @@
     if (!GK.isListen(it) && /[A-Za-z]/.test(s)) {
       $('#fb').querySelector('.bubble').insertAdjacentHTML('beforeend', `<button class="btn small" data-a="say" data-t="${esc(s)}">${ICON.spk}聽這句</button>`);
     }
+    renderTrail();
     $('#nextBtn').hidden = false; $('#nextBtn').focus({ preventScroll: true });
+    $('#nextBtn').scrollIntoView({ block: 'nearest', behavior: GK.reduceMotion ? 'auto' : 'smooth' });
   }
-  function right() {
+  function right(el) {
     sfx.good();
-    if (tries === 0) score++; else review.push(it);
-    const cheer = tries === 0 ? pick(['答對了！', '太棒了！', '完全正確！', '好厲害！']) : '對了！改過來就學會了！';
-    fb(pick(CREW.filter(k => k !== 'red')), `<b>${cheer}</b>`);
+    const h = hostEl(); if (h) { h.classList.remove('enter'); hop(h); }
+    if (tries === 0) {
+      score++; streak++;
+      const col = PETAL[hosts[idx]];
+      marks[idx] = col;
+      burst(el); flyFlower(el, col);
+      fb(hosts[idx], `<b>${pick(['答對了！', '太棒了！', '完全正確！', '好厲害！', '種出一朵花！'])}</b>`);
+      if (streak >= 3 && (streak === 3 || streak % 5 === 0)) { const s = streak; setTimeout(() => cheer(s), 500); }
+    } else {
+      streak = 0; marks[idx] = 'sprout'; review.push(it);
+      fb(hosts[idx], '<b>對了！改過來就學會了！</b><span>長出一棵小芽。</span>');
+    }
     afterAnswer();
   }
   function hint() {
-    sfx.bad();
+    sfx.bad(); streak = 0;
     fb('red', `<b>再想一想！</b><span>${ruleText()}</span>${pagePill(it.sec)}`);
   }
   function reveal(mark) {
-    sfx.bad(); review.push(it); mark();
+    sfx.bad(); streak = 0; review.push(it); marks[idx] = 'sprout'; mark();
     fb('red', `<b>正確答案是：${esc(it.type === '重組' ? it.a.split(' / ').join(' ') : it.a)}</b><span>${ruleText()}</span>${pagePill(it.sec)}`);
     afterAnswer();
   }
 
-  /* ---------- 成績 ---------- */
+  /* ---------- 成績：我的花園 ---------- */
   function result() {
-    setProgress();
+    clearTimeout(cheer.t); $("#cheer").hidden = true;
     const n = list.length, pct = score / n;
     const stars = pct >= .9 ? 3 : pct >= .7 ? 2 : 1;
-    const msg = score === n ? '全部第一次就答對！太厲害了！' : pct >= .8 ? '很棒！把下面的題目再看一次就更好了！' : pct >= .6 ? '不錯喔！翻翻課本，再練一次會更好！' : '沒關係！照下面的頁碼翻課本看一看，再練一次！';
+    const msg = score === n ? '全部第一次就答對，花園開滿了花！' : pct >= .8 ? '花園好漂亮！把下面的題目再看一次，就能開滿花！' : pct >= .6 ? '不錯喔！翻翻課本，再練一次會開更多花！' : '小芽也會長大！照下面的頁碼翻課本看一看，再練一次！';
     const pages = [...new Set(review.map(x => x.sec.page).filter(Boolean))];
     const other = LISTEN_MODE ? 's' : 'l';
     main.innerHTML = `<section class="card result">
-      <div class="crew hopper">${shuffle(CREW).map(k => pikImg(k, 'jump')).join('')}</div>
+      <div class="garden">
+        <div class="crew hopper">${shuffle(CREW).map(k => pikImg(k, 'jump')).join('')}</div>
+        <div class="beds">${marks.map((m, i) => `<span class="bed" style="animation-delay:${i * 70}ms">${m === 'sprout' || !m ? sproutSVG() : flowerSVG(m)}</span>`).join('')}</div>
+      </div>
       <p class="stars">${[0, 1, 2].map(i => `<i class="${i < stars ? 'on' : ''}">${ICON.star}</i>`).join('')}</p>
-      <h1>第一次就答對 ${score} / ${n} 題</h1>
+      <h1>種出 ${score} 朵花（${score} / ${n} 題第一次就答對）</h1>
       <p class="sub">${msg}</p>
       ${pages.length ? `<div class="go-pages"><b>回去翻一翻：</b>${pages.map(p => `<span class="page-pill">${ICON.book}${esc(p)}</span>`).join('')}</div>` : ''}
       ${review.length ? `<h2>要再看一次的題目</h2><ol class="review">${review.map(x => `<li><span class="sec-tag">${esc(x.sec.name)}</span>

@@ -2,28 +2,38 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>練習｜GreenKit English</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="assets/app.css?v=1.0.0">
+<link rel="stylesheet" href="assets/app.css?v=1.1.0">
+<link rel="stylesheet" href="assets/play.css?v=1.1.0">
 </head>
 <body class="practice">
+<div class="scenery" aria-hidden="true">
+  <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+  <svg class="hills" viewBox="0 0 1200 220" preserveAspectRatio="none"><path d="M0,120 C180,40 360,60 520,110 C700,165 880,60 1200,90 V220 H0Z" fill="#bfe0a6"/><path d="M0,170 C220,110 420,150 640,160 C860,170 1000,120 1200,140 V220 H0Z" fill="#9fd07f"/></svg>
+</div>
+
 <header class="topbar">
   <a class="btn home" id="homeBtn" href="index.html"></a>
   <div class="tb-title"><span id="unitName">GreenKit English</span><b id="modeName"></b></div>
-  <button class="btn" id="soundBtn" type="button"></button>
-  <div class="prog"><div class="prog-bar" id="progBar"></div><span id="progText"></span></div>
+  <div class="tb-right">
+    <span class="bloom" id="bloom" title="第一次就答對的花"></span>
+    <button class="btn" id="soundBtn" type="button"></button>
+  </div>
+  <div class="trail" id="trail" aria-hidden="true"></div>
 </header>
 
-<main class="wrap narrow" id="main" aria-live="polite">
+<main class="wrap play" id="main" aria-live="polite">
   <section class="card start"><p class="sub">讀取題庫中…</p></section>
 </main>
 
+<div class="cheer" id="cheer" hidden></div>
 <footer class="foot">非官方、粉絲自製教材・僅供學習使用</footer>
 
-<script src="assets/app.js?v=1.0.0"></script>
-<script src="assets/practice.js?v=1.0.0"></script>
+<script src="assets/app.js?v=1.1.0"></script>
+<script src="assets/practice.js?v=1.1.0"></script>
 </body>
 </html>

@@ -1,0 +1,117 @@
+/* GreenKit English：練習頁的遊戲畫面（小路、出題角色、彩色選項、花瓣特效、花園）。以 iPad 為主。 */
+
+/* 背景：天空、雲、山坡 */
+body.practice{background:#e4f1da}
+.scenery{position:fixed;inset:0;z-index:-1;background:linear-gradient(#c9e8fb 0,#e2f3f6 38%,#e4f1da 62%);overflow:hidden;pointer-events:none}
+.hills{position:absolute;left:0;right:0;bottom:0;width:100%;height:24vh}
+.cloud{position:absolute;width:150px;height:46px;background:#fff;border-radius:40px;opacity:.85;animation:drift 70s linear infinite}
+.cloud::before,.cloud::after{content:'';position:absolute;background:#fff;border-radius:50%}
+.cloud::before{width:64px;height:64px;left:22px;top:-30px}
+.cloud::after{width:80px;height:80px;left:62px;top:-42px}
+.cloud.c1{top:16%;left:-160px}
+.cloud.c2{top:34%;left:-160px;transform:scale(.7);animation-duration:95s;animation-delay:-40s}
+.cloud.c3{top:8%;left:-160px;transform:scale(.55);animation-duration:120s;animation-delay:-80s}
+@keyframes drift{to{left:110%}}
+
+/* 頂列 */
+.topbar{grid-template-columns:auto 1fr auto;padding:8px 16px 0}
+.tb-right{display:flex;align-items:center;gap:10px}
+.bloom{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:2px 12px 2px 6px;border-radius:999px;background:#fff0f6;border:2px solid #f6c6dc;font-family:var(--en);font-size:22px;color:#b0436f}
+.bloom .flower{width:34px;height:34px}
+.bloom.pop{animation:pop .45s}
+@keyframes pop{40%{transform:scale(1.3)}}
+
+/* 小路：15 顆踏腳石 */
+.trail{grid-column:1/-1;position:relative;height:74px;margin:2px 4px 0}
+.trail .path{position:absolute;left:0;right:0;top:50px;border-top:4px dashed #b9d9a3}
+.stone{position:absolute;top:50px;width:24px;height:16px;margin:-8px 0 0 -12px;border-radius:50%;background:#d7cbb4;box-shadow:inset 0 -3px 0 #b8aa8f}
+.stone.cur{background:#ffe48a;box-shadow:0 0 0 4px rgba(255,201,60,.45),inset 0 -3px 0 #d9a21f}
+.stone .flower{position:absolute;width:30px;height:30px;left:-3px;top:-24px;animation:popin .4s}
+.walker{position:absolute;top:0;height:52px;transform:translateX(-50%);transition:left .6s cubic-bezier(.5,1.6,.5,1)}
+.walker .pik{height:52px}
+.trail-text{position:absolute;right:0;top:0;font-size:13px;font-weight:700;color:var(--ink-soft);background:rgba(255,255,255,.85);border-radius:999px;padding:0 10px}
+@keyframes popin{0%{transform:scale(0)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+
+/* 出題角色＋對話框 */
+.wrap.play{max-width:1060px;padding-top:4px}
+.scene-q{display:grid;grid-template-columns:190px 1fr;gap:6px;align-items:start;margin-top:14px}
+.host{position:sticky;top:150px;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;animation:enter .55s cubic-bezier(.3,1.5,.5,1)}
+.host .pik{height:200px}
+.host.speaker{cursor:pointer}
+.host-hint{display:inline-flex;align-items:center;gap:4px;font-size:14px;font-weight:700;color:var(--leaf-deep);background:#fff;border-radius:999px;padding:2px 10px;margin-top:4px;box-shadow:0 2px 0 var(--line)}
+.pik.talking{animation:hop .5s ease-in-out infinite}
+@keyframes enter{0%{transform:translateY(60px) scale(.5);opacity:0}100%{transform:none;opacity:1}}
+
+.scene-q .card.q{position:relative;margin:0;border-top:10px solid var(--hc,#9dbbf5)}
+.scene-q .card.q::before{content:'';position:absolute;left:-22px;top:120px;border:14px solid transparent;border-right:22px solid #fff;border-left:0}
+.sentence{font-size:30px}
+.prompt{font-size:22px}
+
+/* 彩色選項 */
+.opt{position:relative;min-height:68px;font-size:21px;border-width:3px;transition:transform .12s}
+.opt:active:not(:disabled){transform:scale(.97)}
+.opt .badge{flex:none;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:var(--bc);color:#fff;font-family:var(--en);font-weight:700;font-size:20px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18);text-shadow:0 1px 0 rgba(0,0,0,.25)}
+.opt:hover:not(:disabled){border-color:var(--bc)}
+.opt.right{animation:pop .45s;border-color:var(--good)!important}
+.opt.right .badge{background:var(--good)}
+.tf .opt{min-height:96px;font-size:28px;flex-direction:column;gap:2px}
+.tf .opt .badge{width:54px;height:54px;font-size:30px}
+.tf .opt .otext{font-size:20px}
+
+/* 字卡、字母 */
+.tile{border:3px solid var(--tc);background:#fff;box-shadow:0 4px 0 var(--tc);min-height:56px;font-size:23px;transition:transform .1s}
+.tile:active{transform:translateY(3px);box-shadow:0 1px 0 var(--tc)}
+.letters .tile{width:56px}
+.slots:not(.spell) .slot.full,.spell .slot.full{border-color:var(--tc);background:#fff;animation:popin .25s}
+.slots{min-height:76px;background:rgba(255,255,255,.7)}
+
+/* 回饋 */
+.feedback .hopper{height:100px;animation:enter .45s cubic-bezier(.3,1.5,.5,1)}
+.nav .btn.big{min-width:200px}
+
+/* 花瓣、飛行的花、連續答對 */
+.petal{position:fixed;z-index:30;width:14px;height:10px;margin:-5px 0 0 -7px;border-radius:50% 50% 50% 0;pointer-events:none;animation:petal .9s ease-out forwards}
+@keyframes petal{to{transform:translate(var(--dx),var(--dy)) rotate(var(--rot));opacity:0}}
+.fly{position:fixed;z-index:31;width:48px;height:48px;margin:-24px 0 0 -24px;pointer-events:none;transition:transform .75s cubic-bezier(.4,-.3,.6,1),opacity .75s}
+.fly .flower{width:100%;height:100%}
+.cheer{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.cheer-box{background:#fffdf4;border:4px solid var(--sun);border-radius:28px;padding:16px 30px 20px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.18);animation:popin .45s}
+.cheer-box .crew{height:110px}
+.cheer-box b{display:block;font-size:34px;color:#b06a00;margin-top:4px}
+
+/* 開始畫面 */
+.start .crew.big{height:120px}
+
+/* 成績：我的花園 */
+.garden{position:relative;border-radius:20px;background:linear-gradient(#d8f0ff 0,#eaf7e0 55%,#a6d68a 55%,#8cc66f 100%);padding:14px 10px 18px;margin:-4px -4px 6px}
+.garden .crew{height:96px}
+.beds{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 3px;margin-top:6px}
+.bed{width:44px;height:56px;display:flex;align-items:flex-end;justify-content:center;animation:grow .5s backwards}
+.bed .flower{width:44px;height:44px}
+@keyframes grow{0%{transform:scale(0) translateY(20px)}100%{transform:none}}
+.result h1{font-size:28px}
+
+/* iPad 直放、手機：角色縮小放在對話框上面 */
+@media (max-width:900px),(orientation:portrait){
+  .scene-q{grid-template-columns:1fr;gap:0}
+  .host{position:relative;top:auto;height:auto;flex-direction:row;justify-content:flex-start;gap:10px;padding-left:18px;margin-bottom:-6px;z-index:1}
+  .host .pik{height:150px}
+  .scene-q .card.q::before{left:56px;top:-26px;border:12px solid transparent;border-bottom:16px solid var(--hc,#9dbbf5);border-top:0}
+}
+@media (max-width:640px){
+  .bloom{font-size:18px;padding-right:8px}
+  .bloom .flower{width:26px;height:26px}
+  .stone{width:16px;height:12px;margin:-6px 0 0 -8px}
+  .stone .flower{width:22px;height:22px;left:-3px;top:-18px}
+  .walker,.walker .pik{height:40px}
+  .trail{height:66px}.trail .path,.stone{top:44px}
+  .host .pik{height:84px}
+  .sentence{font-size:23px}
+  .opt{min-height:58px;font-size:18px}
+  .opt .badge{width:34px;height:34px;font-size:17px}
+  .tf .opt{min-height:80px}
+  .tile{font-size:20px}
+  .letters .tile{width:46px}
+  .cheer-box b{font-size:26px}
+}
+@media (prefers-reduced-motion:reduce){.cloud{display:none}}
