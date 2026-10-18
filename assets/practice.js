@@ -77,7 +77,10 @@
     return one(q);
   }
   const passageHTML = sec => sec.passage.filter(l => l.trim()).map(l => `<p>${esc(l).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</p>`).join('');
-  const pagePill = sec => sec.page ? `<span class="page-pill">${ICON.book}翻到 ${esc(sec.page)}</span>` : '';
+  const pagePill = (sec, self) => sec.page ? `<span class="page-pill">${ICON.book}${self ? '相關內容在' : '翻到'} ${esc(sec.page)}</span>` : '';
+  /* 自編題：課本和習作上沒有這一題，是額外練習 */
+  const SELF_TAG = '<span class="src-tag">自編練習</span>';
+  const selfNote = item => item.self ? `<p class="self-note">${ICON.book}這題是額外練習，課本和習作上沒有這一題${item.sec.page ? `；用到的內容在 ${esc(item.sec.page)}` : ''}。</p>` : '';
   const hostEl = () => main.querySelector('.host .pik');
 
   function show() {
@@ -114,7 +117,8 @@
         ${lis ? `<span class="host-hint">${ICON.spk}點我再聽</span>` : ''}
       </div>
       <div class="card q">
-        <div class="qhead"><span class="sec-tag">${esc(sec.name)}</span><span class="qnum">${idx + 1} / ${list.length}</span></div>
+        <div class="qhead"><span class="tags"><span class="sec-tag">${esc(sec.name)}</span>${it.self ? SELF_TAG : ''}</span><span class="qnum">${idx + 1} / ${list.length}</span></div>
+        ${selfNote(it)}
         ${passage}
         <p class="prompt">${esc(prompt)}</p>
         ${body}
@@ -276,11 +280,11 @@
   }
   function hint() {
     sfx.bad(); streak = 0;
-    fb('red', `<b>再想一想！</b><span>${ruleText()}</span>${pagePill(it.sec)}`);
+    fb('red', `<b>再想一想！</b><span>${ruleText()}</span>${pagePill(it.sec, it.self)}`);
   }
   function reveal(mark) {
     sfx.bad(); streak = 0; review.push(it); marks[idx] = 'sprout'; mark();
-    fb('red', `<b>正確答案是：${esc(it.type === '重組' ? it.a.split(' / ').join(' ') : it.a)}</b><span>${ruleText()}</span>${pagePill(it.sec)}`);
+    fb('red', `<b>正確答案是：${esc(it.type === '重組' ? it.a.split(' / ').join(' ') : it.a)}</b><span>${ruleText()}</span>${pagePill(it.sec, it.self)}`);
     afterAnswer();
   }
 
@@ -301,7 +305,7 @@
       <h1>種出 ${score} 朵花（${score} / ${n} 題第一次就答對）</h1>
       <p class="sub">${msg}</p>
       ${pages.length ? `<div class="go-pages"><b>回去翻一翻：</b>${pages.map(p => `<span class="page-pill">${ICON.book}${esc(p)}</span>`).join('')}</div>` : ''}
-      ${review.length ? `<h2>要再看一次的題目</h2><ol class="review">${review.map(x => `<li><span class="sec-tag">${esc(x.sec.name)}</span>
+      ${review.length ? `<h2>要再看一次的題目</h2><ol class="review">${review.map(x => `<li><span class="sec-tag">${esc(x.sec.name)}</span>${x.self ? SELF_TAG : ''}
         <p class="rq">${GK.isListen(x) ? '聽到：' + esc(x.q) : x.type === '重組' || x.type === '拼字' ? esc(x.q || '') : qHTML(x.q)}</p>
         <p class="ra">正確答案：<b>${esc(x.type === '重組' ? x.a.split(' / ').join(' ') : x.a)}</b></p>
         ${x.sec.page ? `<p class="rp">${ICON.book}${esc(x.sec.page)}</p>` : ''}</li>`).join('')}</ol>` : ''}

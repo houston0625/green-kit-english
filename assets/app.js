@@ -1,7 +1,7 @@
 /* GreenKit English：共用程式（讀題庫 .md、隨機出題、作答、朗讀、音效）。
    題庫在 banks/unit-N.md，寫法見 banks/README.md。首頁 index.html 和練習頁 practice.html 都載入這個檔。 */
 const GK = (() => {
-  const VER = '1.1.0', DATE = '2026-10-18';
+  const VER = '1.2.0', DATE = '2026-10-18';
   const PER_ROUND = 15;
   const UNITS = [1, 2, 3];
   const CREW = ['yellow', 'red', 'blue', 'purple', 'white', 'rock', 'wing', 'ice'];
@@ -33,7 +33,7 @@ const GK = (() => {
       if (line.startsWith('|')) {
         const c = line.replace(/^\|/, '').replace(/\|$/, '').split('|').map(s => s.trim());
         if (!TYPES.includes(c[0]) || !c[2]) continue;   /* 表頭、分隔線、不認得的題型 */
-        sec.items.push({ type: c[0], q: c[1] || '', a: c[2], others: (c[3] || '').split(' / ').map(s => s.trim()).filter(Boolean), hint: c[4] || '', sec });
+        sec.items.push({ type: c[0], q: c[1] || '', a: c[2], others: (c[3] || '').split(' / ').map(s => s.trim()).filter(Boolean), hint: c[4] || '', self: c[5] === '自編', sec });
       }
     }
     unit.sections = unit.sections.filter(s => s.items.length);
